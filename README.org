@@ -1,6 +1,6 @@
 #+TITLE: Readme
 
-Instructions:
+* Instructions:
 
 - Install the ~fish-colors.el~ file
 - Run ~M-x fish-colors-install-function~
@@ -11,3 +11,6 @@ if test $INSIDE_EMACS = vterm
     set_emacs_colors
 end
 #+END_SRC
+
+* Dependencies
+- ~s.el~
