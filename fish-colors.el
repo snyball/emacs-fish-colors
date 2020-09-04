@@ -38,7 +38,6 @@
 ;;; Code:
 
 (require 'xdg)
-(require 's)
 
 (defvar fish-color-to-emacs-face
   '((fish_color_autosuggestion . font-lock-comment-face)
@@ -67,60 +66,56 @@
 
 ;;;###autoload
 (defun fish-colors--face-to-fish-color (face)
-  "Convert an Emacs FACE to set_color syntax."
-  (let ((color (face-attribute face :foreground))
-        (default-color (face-attribute 'default :foreground)))
-    (s-join " " `(,(format "'%s'" (if (eq color :unspecified)
-                                      default-color
-                                    color))
-                  ,(if (eq (face-attribute face :weight) 'bold)
-                       "--bold"
-                     "")
-                  ,(let ((underline (face-attribute face :underline)))
-                     (if (and underline (not (eq underline :unspecified)))
-                         "--underline"
-                       ""))))))
+  "Convert the Emacs FACE to FISH's `set_color' syntax."
+  (let ((default-color (face-attribute 'default :foreground))
+        (color (face-attribute face :foreground nil t))
+        (slant (face-attribute face :underline nil t))
+        (underline (face-attribute face :underline nil t))
+        (weight (face-attribute face :weight nil t)))
+    (string-join `(,(when (memq slant '( roman italic oblique
+                                         reverse-italic reverse-oblique))
+                      "--italic")
+                   ,(when (not (memq underline '(unspecified :unspecified)))
+                      "--underline")
+                   ,(when (memq weight '( semi-bold bold extra-bold ultra-bold
+                                          black))
+                      "--bold")
+                   ,(format "'%s'" (if (memq color '(unspecified :unspecified))
+                                       default-color
+                                     color)))
+                 " ")))
 
 
+(declare-function cl-loop "cl-lib")
 ;;;###autoload
-(defun fish-colors--make-commands (&optional indent)
-  "Make the commands to set fish colors, optionally indented with INDENT spaces."
-  (setq indent (if indent
-                   (s-repeat indent " ")
-                 ""))
-  (let ((commands nil))
-    (dolist (color fish-color-to-emacs-face)
-      (pcase color
-        (`(,fish-name . ,face-name)
-         (push (format "%sset -gx %s %s" indent fish-name
-                       (fish-colors--face-to-fish-color face-name))
-               commands))))
-    (s-join "\n" commands)))
-
+(defun fish-colors--make-commands (&optional indent-level)
+  "Make the commands to set fish colors, optionally indented with INDENT-LEVEL spaces."
+  (string-join (cl-loop with indentation = (make-string (or indent-level 0)
+                                                        ?\ )
+                        for (fish-name . face-name) in fish-color-to-emacs-face
+                        collect (format "%sset -gx %s %s" indentation fish-name
+                                        (fish-colors--face-to-fish-color face-name)))
+               "\n"))
 
 ;;;###autoload
 (defun fish-colors--make-function ()
-  "Make the set_emacs_colors function."
-  (let ((lines `("function set_emacs_colors -d 'Set colorscheme according to Emacs faces'"
-                 ,(fish-colors--make-commands 4)
-                 "end"
-                 "")))
-    (s-join "\n" lines)))
+  "Make the `set_emacs_colors' function."
+  (string-join
+   `("function set_emacs_colors -d 'Set color scheme according to Emacs faces.'"
+     ,(fish-colors--make-commands 4)
+     "end")
+   "\n"))
 
 
 ;;;###autoload
 (defun fish-colors-install-function ()
-  "Install the set_emacs_colors function in $XDG_CONFIG_HOME/fish/functions/."
+  "Install the `set_emacs_colors' function in $XDG_CONFIG_HOME/fish/functions/."
   (interactive)
-  (let ((path (concat (file-name-as-directory (xdg-config-home))
-                      "fish/functions/set_emacs_colors.fish")))
-    (with-current-buffer (find-file-noselect path)
-      (insert "#!/usr/bin/env fish")
-      (newline)
-      (newline)
-      (insert (fish-colors--make-function))
-      (save-buffer)
-      (kill-buffer))))
+  (with-temp-file (expand-file-name "fish/functions/set_emacs_colors.fish"
+                                    (xdg-config-home))
+    (insert "#!/usr/bin/env fish\n\n")
+    (insert (fish-colors--make-function))
+    (insert "\n")))
 
 (provide 'fish-colors)
 
