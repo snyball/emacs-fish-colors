@@ -11,6 +11,3 @@ if set -q INSIDE_EMACS
     set_emacs_colors
 end
 #+END_SRC
-
-** Dependencies
-- ~s.el~
