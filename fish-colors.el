@@ -75,7 +75,7 @@
     (string-join `(,(when (memq slant '( roman italic oblique
                                          reverse-italic reverse-oblique))
                       "--italic")
-                   ,(when (not (memq underline '(unspecified :unspecified)))
+                   ,(when (not (memq underline '(unspecified :unspecified nil)))
                       "--underline")
                    ,(when (memq weight '( semi-bold bold extra-bold ultra-bold
                                           black))
