@@ -66,7 +66,7 @@
 
 ;;;###autoload
 (defun fish-colors--face-to-fish-color (face)
-  "Convert the Emacs FACE to FISH's `set_color' syntax."
+  "Convert the Emacs FACE to fish's `set_color' syntax."
   (let ((default-color (face-attribute 'default :foreground))
         (color (face-attribute face :foreground nil t))
         (slant (face-attribute face :underline nil t))
